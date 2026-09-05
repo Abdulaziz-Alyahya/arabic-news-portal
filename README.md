@@ -17,27 +17,70 @@ The project focuses on two main analysis components:
 - `processing/` - Clean and preprocess Arabic text
 - `analysis/` - Story similarity and ideological orientation analysis
 - `web/` - Backend and web portal code
-- `data/` - Local data and database files
+- `data/` - SQLite database and database setup files
 
-## Week 1
+## Week 1 - News Collection
 
-The first week focuses on:
+During Week 1, the project setup and initial news collection pipeline were completed.
 
-- Finding accessible Arabic news sources
-- Collecting real Arabic articles
-- Extracting article titles and full text
-- Storing articles in a common structure
-- Supporting UTF-8 Arabic text
-- Detecting duplicate articles
-- Handling missing fields
+### News Sources
 
-## Initial Technologies
+The current working Arabic news sources are:
+
+- Al Jazeera
+- DW Arabic
+
+Both sources provide RSS feeds that can be read using `feedparser`.
+
+### Collection Process
+
+The collector:
+
+1. Reads RSS feeds using `feedparser`
+2. Extracts article metadata such as title, URL, publication date, author, and section
+3. Downloads article pages
+4. Extracts the Arabic article body using `trafilatura`
+5. Stores the articles in SQLite
+
+### Stored Article Fields
+
+The database currently stores:
+
+- id
+- source_name
+- source_country
+- title_ar
+- body_ar
+- url
+- published_at
+- collected_at
+- author
+- section
+- language
+- content_hash
+
+### Duplicate Detection
+
+Two duplicate checks are used:
+
+- Duplicate URL detection using a UNIQUE URL field
+- Duplicate article content detection using SHA-256 content hashes
+
+### Missing Fields
+
+Missing fields such as author or section are stored as empty values instead of causing the collector to crash.
+
+## Technologies
 
 - Python
 - feedparser
 - trafilatura
 - SQLite
+- hashlib
 
-## Status
+## Run the Project
 
-Week 1 - Arabic news collection and project setup.
+Activate the virtual environment:
+
+```bash
+source .venv/bin/activate
