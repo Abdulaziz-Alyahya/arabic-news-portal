@@ -30,7 +30,7 @@ for source in SOURCES:
 
     feed = feedparser.parse(source["rss_url"])
 
-    for article in feed.entries[:3]:
+    for article in feed.entries[:50]:
 
         title = article.get("title", "")
         url = article.get("link", "")

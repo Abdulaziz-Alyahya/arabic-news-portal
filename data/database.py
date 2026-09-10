@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS articles (
     author TEXT,
     section TEXT,
     language TEXT,
-    content_hash TEXT
+    content_hash TEXT,
+    processed_text TEXT,
+    cluster_id INTEGER
 )
 """)
 
