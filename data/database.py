@@ -5,6 +5,8 @@ DATABASE_PATH = "data/articles.db"
 connection = sqlite3.connect(DATABASE_PATH)
 cursor = connection.cursor()
 
+
+# Articles table
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS articles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +26,33 @@ CREATE TABLE IF NOT EXISTS articles (
 )
 """)
 
+
+# Source ideological profiles table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS source_profiles (
+    source_name TEXT PRIMARY KEY,
+    political_alignment TEXT,
+    ideological_tendency TEXT,
+    confidence TEXT,
+    short_note TEXT
+)
+""")
+
+# Article-level ideological orientation table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS article_orientation (
+    article_id INTEGER PRIMARY KEY,
+    political_alignment TEXT,
+    ideological_tendency TEXT,
+    confidence TEXT,
+    short_reason TEXT,
+    FOREIGN KEY (article_id) REFERENCES articles(id)
+)
+""")
+
+
+
 connection.commit()
 connection.close()
 
-print("Database and articles table created successfully.")
+print("Database tables created successfully.")

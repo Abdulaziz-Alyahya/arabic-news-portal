@@ -1,0 +1,29 @@
+Analyze the political and ideological orientation of the Arabic news article below.
+
+Use only the content of the article. Do not guess the orientation based only on the news source, country, person, political party, or topic mentioned.
+
+Political alignment must be one of:
+left, center, right, unclear
+
+Ideological tendency must be one of:
+progressive, conservative, nationalist, Islamist, mixed, unclear
+
+Confidence must be one of:
+high, medium, low
+
+If there is not enough evidence in the article to identify an orientation, use "unclear".
+
+Do not evaluate whether the article is true, false, reliable, biased, good, or bad.
+
+Return only these fields:
+
+political_alignment:
+ideological_tendency:
+confidence:
+short_reason:
+
+Arabic headline:
+{title}
+
+Arabic article:
+{body}
