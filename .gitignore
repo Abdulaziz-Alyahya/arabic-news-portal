@@ -18,3 +18,6 @@ __pycache__/
 
 # VS Code settings
 .vscode/
+
+# Runtime logs
+logs/

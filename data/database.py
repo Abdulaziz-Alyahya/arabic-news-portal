@@ -50,7 +50,15 @@ CREATE TABLE IF NOT EXISTS article_orientation (
 )
 """)
 
-
+# Story groups table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS story_groups (
+    cluster_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    representative_title TEXT NOT NULL,
+    article_count INTEGER DEFAULT 0,
+    source_count INTEGER DEFAULT 0
+)
+""")
 
 connection.commit()
 connection.close()

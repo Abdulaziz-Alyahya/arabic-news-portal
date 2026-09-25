@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 DATABASE_PATH = "data/articles.db"
 
 # Similarity threshold
-THRESHOLD = 0.85
+THRESHOLD = 0.865
 
 
 # Load the multilingual E5 model
