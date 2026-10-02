@@ -11,18 +11,45 @@ def get_story_groups():
 
     cursor.execute("""
     SELECT
-        cluster_id,
-        representative_title,
-        article_count,
-        source_count
-    FROM story_groups
-    ORDER BY cluster_id
+        sg.cluster_id,
+        sg.representative_title,
+        sg.article_count,
+        sg.source_count,
+        GROUP_CONCAT(DISTINCT a.source_name) AS sources,
+        MIN(NULLIF(a.published_at, '')) AS first_published_at,
+        MAX(NULLIF(a.published_at, '')) AS last_published_at
+
+    FROM story_groups sg
+
+    LEFT JOIN articles a
+        ON sg.cluster_id = a.cluster_id
+
+    GROUP BY
+        sg.cluster_id,
+        sg.representative_title,
+        sg.article_count,
+        sg.source_count
+
+    ORDER BY sg.cluster_id
     """)
 
     rows = cursor.fetchall()
     connection.close()
 
-    return [dict(row) for row in rows]
+    story_groups = []
+
+    for row in rows:
+
+        story = dict(row)
+
+        if story["sources"]:
+            story["sources"] = story["sources"].split(",")
+        else:
+            story["sources"] = []
+
+        story_groups.append(story)
+
+    return story_groups
 
 
 def get_story_articles(cluster_id):
@@ -46,17 +73,22 @@ def get_story_articles(cluster_id):
         END AS orientation_level,
 
         COALESCE(
-            ao.political_alignment,
-            sp.political_alignment,
-            'unclear'
-        ) AS political_alignment,
+    ao.political_alignment,
+    sp.political_alignment,
+    'unclear'
+    ) AS political_alignment,
 
-        COALESCE(
-            ao.ideological_tendency,
-            sp.ideological_tendency,
-            'unclear'
-        ) AS ideological_tendency
+       COALESCE(
+        ao.ideological_tendency,
+        sp.ideological_tendency,
+        'unclear'
+    ) AS ideological_tendency,
 
+       COALESCE(
+        ao.confidence,
+        sp.confidence,
+        'low'
+    ) AS confidence
     FROM articles a
 
     LEFT JOIN article_orientation ao
