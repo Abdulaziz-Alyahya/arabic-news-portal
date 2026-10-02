@@ -19,3 +19,5 @@ tld==0.13.2
 trafilatura==2.2.0
 tzlocal==5.4.4
 urllib3==2.7.0
+fastapi==0.141.1
+uvicorn==0.53.0
