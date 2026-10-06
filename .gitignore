@@ -24,3 +24,6 @@ __pycache__/
 
 # Runtime logs
 logs/
+
+# Clean-start test environment
+.venv-test/
