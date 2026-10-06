@@ -27,7 +27,6 @@ async function loadStories() {
 
     try {
 
-        // The API is served from the same website
         const response = await fetch("/stories");
 
         if (!response.ok) {
@@ -35,6 +34,24 @@ async function loadStories() {
         }
 
         const stories = await response.json();
+
+        /*
+        Sort stories from newest to oldest
+        using the latest publication date.
+        */
+        stories.sort((a, b) => {
+
+            const dateA = a.last_published_at
+                ? new Date(a.last_published_at).getTime()
+                : 0;
+
+            const dateB = b.last_published_at
+                ? new Date(b.last_published_at).getTime()
+                : 0;
+
+            return dateB - dateA;
+        });
+
 
         storiesContainer.innerHTML = "";
 
