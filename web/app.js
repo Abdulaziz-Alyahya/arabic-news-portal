@@ -1,104 +1,57 @@
-const storiesContainer = document.getElementById("stories");
+const storiesContainer = document.getElementById('stories');
+const { element, timestamp, time, state, entrance, reconcile, poll, updateStatus } = NewsUI;
+const reportStatus = updateStatus();
+let storiesSignature = null;
 
-
-function formatDate(value) {
-
-    if (!value) {
-        return "التاريخ غير متوفر";
-    }
-
-    const date = new Date(value);
-
-    if (isNaN(date.getTime())) {
-        return value;
-    }
-
-    return date.toLocaleString("ar", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
-    });
+function renderStory(story, index) {
+    const card = element('article', 'story-card');
+    entrance(card, index);
+    const sources = element('div', 'story-sources');
+    (story.sources || []).forEach(source => sources.append(element('bdi', 'source-label', source)));
+    card.append(sources, element('h2', '', story.representative_title));
+    const info = element('div', 'story-info');
+    const published = element('div', 'story-published');
+    published.append(element('span', '', 'آخر نشر: '), time(story.last_published_at));
+    const counts = element('div', 'story-counts');
+    counts.append(element('span', '', `المقالات: ${story.article_count}`), element('span', '', `المصادر: ${story.source_count}`));
+    info.append(published, counts);
+    const link = element('a', 'story-link', 'مقارنة التغطية');
+    link.href = `/compare?id=${encodeURIComponent(story.cluster_id)}`;
+    link.setAttribute('aria-label', `مقارنة التغطية: ${story.representative_title}`);
+    card.append(info, link);
+    return card;
 }
 
-
-async function loadStories() {
-
+async function loadStories(signal) {
+    const initial = storiesSignature === null;
+    if (initial) storiesContainer.setAttribute('aria-busy', 'true');
     try {
-
-        const response = await fetch("/stories");
-
-        if (!response.ok) {
-            throw new Error("Failed to load stories");
-        }
-
-        const stories = await response.json();
-
-        /*
-        Sort stories from newest to oldest
-        using the latest publication date.
-        */
+        const response = await fetch('/stories', { cache: 'no-store', signal });
+        if (!response.ok) throw new Error('Failed to load stories');
+        const data = await response.json();
+        // Compare only fields visible in the interface; normalize source ordering.
+        const stories = data.map(story => ({
+            cluster_id: story.cluster_id, representative_title: story.representative_title,
+            sources: [...(story.sources || [])].sort(), article_count: story.article_count,
+            source_count: story.source_count, last_published_at: story.last_published_at
+        }));
         stories.sort((a, b) => {
-
-            const dateA = a.last_published_at
-                ? new Date(a.last_published_at).getTime()
-                : 0;
-
-            const dateB = b.last_published_at
-                ? new Date(b.last_published_at).getTime()
-                : 0;
-
-            return dateB - dateA;
+            const dateA = timestamp(a.last_published_at), dateB = timestamp(b.last_published_at);
+            return dateA === dateB ? Number(a.cluster_id) - Number(b.cluster_id) : dateA > dateB ? -1 : 1;
         });
-
-
-        storiesContainer.innerHTML = "";
-
-        stories.forEach(story => {
-
-            const card = document.createElement("article");
-            card.className = "story-card";
-
-            const sources = story.sources
-                .map(source => `<span class="source-label">${source}</span>`)
-                .join("");
-
-            const date = formatDate(story.last_published_at);
-
-            card.innerHTML = `
-                <h3>${story.representative_title}</h3>
-
-                <div class="story-info">
-                    <div>عدد المقالات: ${story.article_count}</div>
-                    <div>عدد المصادر: ${story.source_count}</div>
-                    <div>آخر نشر: ${date}</div>
-                </div>
-
-                <div class="story-sources">
-                    ${sources}
-                </div>
-
-                <a
-                    class="story-link"
-                    href="/compare?id=${story.cluster_id}"
-                >
-                    مقارنة التغطية
-                </a>
-            `;
-
-            storiesContainer.appendChild(card);
-        });
-
+        const signature = JSON.stringify(stories);
+        if (signature !== storiesSignature) {
+            if (stories.length) reconcile(storiesContainer, stories, story => story.cluster_id, renderStory, initial);
+            else state(storiesContainer, 'لا توجد قصص متاحة حاليًا. يمكنك العودة لاحقًا.');
+            storiesSignature = signature;
+        }
+        reportStatus('');
     } catch (error) {
-
-        storiesContainer.innerHTML = `
-            <p>حدث خطأ أثناء تحميل القصص.</p>
-        `;
-
-        console.error(error);
+        if (signal.aborted && document.hidden) return;
+        if (initial) state(storiesContainer, 'تعذّر تحميل القصص. حاول مرة أخرى.', () => refreshStories());
+        else reportStatus('تعذّر التحديث الآن. ستتم إعادة المحاولة تلقائيًا.');
+    } finally {
+        storiesContainer.setAttribute('aria-busy', 'false');
     }
 }
-
-
-loadStories();
+const refreshStories = poll(loadStories);
