@@ -1,45 +1,45 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="قارن تغطية المصادر العربية للقصة نفسها في مكان واحد.">
     <title>مقارنة التغطية</title>
-
+    <script src="/static/theme.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
-
-    <header>
-        <div class="container">
-            <h1>مقارنة الأخبار العربية</h1>
-            <p>قارن تغطية المصادر العربية للقصة نفسها</p>
+    <a class="skip-link" href="#main">انتقل إلى المحتوى</a>
+    <header class="site-header">
+        <div class="container header-inner">
+            <div class="brand">
+                <a class="brand-title" href="/">مقارنة الأخبار العربية</a>
+                <p>قصة واحدة، تغطيات متعددة</p>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="تغيير مظهر الموقع" aria-pressed="false">
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+            </button>
         </div>
     </header>
-
-    <main class="container">
-
-        <a class="back-link" href="/">
-            العودة إلى القصص
-        </a>
-
-        <section class="page-heading">
-            <h2>مقارنة التغطية</h2>
-            <p>شاهد كيف غطت المصادر المختلفة هذه القصة</p>
+    <main id="main" class="container" tabindex="-1">
+        <a class="back-link" href="/">→ <span>العودة إلى القصص</span></a>
+        <section class="page-heading comparison-heading" aria-labelledby="page-title">
+            <p class="eyebrow">مقارنة التغطية</p>
+            <h1 id="page-title">القصة من زوايا مختلفة</h1>
+            <p>اقرأ العناوين جنبًا إلى جنب، ثم انتقل إلى التغطية الأصلية.</p>
         </section>
-
-        <section id="articles" class="articles">
-
-            <p id="loading">جاري تحميل المقالات...</p>
-
+        <p class="orientation-note">التوجهات تقديرات أولية، ولا تعكس دقة الخبر أو موثوقية المصدر. تُعرض النتائج غير المؤكدة بوصفها «غير واضح».</p>
+        <section id="articles" class="articles" aria-label="مقالات القصة" aria-busy="true">
+            <p class="state" role="status">جارٍ تحميل المقالات…</p>
         </section>
-
     </main>
-
+    <footer class="container site-footer">مقارنة الأخبار العربية <span>مساحة لفهم اختلاف التغطية</span></footer>
+    <script src="/static/ui.js"></script>
     <script src="/static/story.js"></script>
-
 </body>
-
 </html>

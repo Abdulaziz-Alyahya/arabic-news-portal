@@ -27,3 +27,12 @@ logs/
 
 # Clean-start test environment
 .venv-test/
+
+# Local model-derived embeddings; never publish them with the site database
+.cache/news-embeddings/
+
+# Private source rate-limit state, restored separately by Actions
+.cache/news-collection/
+
+# Published standalone snapshot (authoritative in GitHub)
+!data/news-snapshot.sqlite

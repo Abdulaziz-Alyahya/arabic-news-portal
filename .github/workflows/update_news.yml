@@ -2,8 +2,8 @@ name: Update Arabic News
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
-
+    # UTC: 02, 07, 12, ... 57; avoid the busy top of the hour.
+    - cron: "2-59/5 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -15,41 +15,89 @@ concurrency:
 
 jobs:
   update-news:
+    # Never publish a manual run of a feature-branch workflow to the default branch.
+    if: github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout latest default branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-          cache: "pip"
+          cache: pip
+          cache-dependency-path: requirements-collection.txt
 
-      - name: Cache Hugging Face model
+      - name: Snapshot logical data
+        run: python -c "from data.pipeline_state import logical_digest; from pathlib import Path; Path('/tmp/news-before.txt').write_text(logical_digest())"
+
+      - name: Install lightweight collection dependencies
+        run: python -m pip install -r requirements-collection.txt
+
+      - name: Restore source cooldowns
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/news-collection
+          key: news-cooldowns-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            news-cooldowns-v1-${{ runner.os }}-
+
+      - name: Check RSS and collect new articles
+        id: collect
+        run: python pipeline.py --collect-only
+
+      - name: Save changed source cooldowns before processing
+        if: always() && steps.collect.outputs.cooldown_changed == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/news-collection
+          key: news-cooldowns-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Restore ML dependency downloads only when needed
+        if: steps.collect.outputs.pending == 'true'
         uses: actions/cache@v4
         with:
-          path: ~/.cache/huggingface
-          key: huggingface-multilingual-e5-base
+          path: ~/.cache/news-ml-pip
+          key: news-ml-pip-${{ runner.os }}-py313-${{ hashFiles('requirements.txt') }}
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Restore Hugging Face model
+        if: steps.collect.outputs.pending == 'true'
+        uses: actions/cache@v4
+        with:
+          # Cache model files only, never Hugging Face authentication tokens.
+          path: ~/.cache/huggingface/hub
+          key: hf-e5-base-v1-${{ runner.os }}
 
-      - name: Run news pipeline
-        run: python pipeline.py
+      - name: Restore title embeddings
+        if: steps.collect.outputs.pending == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache/news-embeddings
+          key: news-embeddings-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            news-embeddings-v1-${{ runner.os }}-
 
-      - name: Save updated database
+      - name: Install CPU pipeline dependencies only when needed
+        if: steps.collect.outputs.pending == 'true'
+        env:
+          PIP_CACHE_DIR: ~/.cache/news-ml-pip
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
 
-          git add data/articles.db
+      - name: Process pending articles
+        if: steps.collect.outputs.pending == 'true'
+        run: python pipeline.py --process-only
 
-          if git diff --cached --quiet; then
-            echo "No database changes to commit."
-          else
-            git commit -m "Update Arabic news data"
-            git pull --rebase origin main
-            git push origin main
-          fi
+      - name: Commit and safely push meaningful database changes
+        run: python -m scripts.publish_news --branch "$DEFAULT_BRANCH" --before-file /tmp/news-before.txt
